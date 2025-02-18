@@ -1,5 +1,5 @@
 # Mean Cumulative Count (MCC)
-MCC is used to reflect a summarization of all events that occur in the population by a given time. 
+MCC is used to reflect mean number of events per person by a given time. 
 
 # Relationship between MCC and cumulative incidence(CumI)
 
