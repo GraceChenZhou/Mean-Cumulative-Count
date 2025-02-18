@@ -4,7 +4,7 @@ MCC is used to reflect mean number of events per person by a given time.
 # Relationship between MCC and cumulative incidence(CumI)
 
 $$MCC(t)=\sum_{p=1}^{m} CumI_p(t)$$, 
-where $CumI_p(t)$ represents the cumulative incidence for the pth (p=1,2,$\dots$, m) occurrence of the event of interest by time t. 
+where $CumI_p(t)$ represents the cumulative incidence for the pth $(p=1,2,\dots,m)$ occurrence of the event of interest by time t. 
 
 # Practice in R
 
