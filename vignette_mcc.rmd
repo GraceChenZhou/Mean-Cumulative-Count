@@ -1,0 +1,359 @@
+---
+title: "Tutorial of Mean Cumulative Count (MCC)"
+author: "Grace Zhou"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+# Introduction
+
+This document demonstrates how to use the `MY.MCC` function to achieve MCC within a specific time period. Additionally, the functions `at.risk`, and `mcc.plot` are included to display MCC results in a plot with an at-risk table. 
+
+# R version
+
+```{r}
+
+R.Version()
+
+```
+
+
+# Install package
+
+```{r eval=FALSE}
+
+install.packages('dplyr')  #Data management
+install.packages('cmprsk') #CIF for right censoring only + competing risk
+install.packages('mstate') #CIF for left truncation and/or right censoring + competing risk
+
+```
+
+# Load function
+
+First, load the necessary libraries and source the function.
+
+```{r}
+
+library(dplyr) #v1.1.4
+library(cmprsk) #2.2-12 
+library(mstate) #0.3.3
+source('MY_MCC.r') #https://github.com/GraceChenZhou/Mean-Cumulative-Count.git
+
+```
+
+# Using function
+
+```{r eval = FALSE}
+
+#' MY.MCC
+#'
+#' Estimate Mean Cumulative Count with 95% Confidence Interval 
+#'
+#' @param id variable name that identifies subjects
+#' @param time variable name that reflects survival time
+#' @param status variable name that indicates status: 0=censored, 1=event, 2=competing risk
+#' @param Tstart a vector of entry time in the presence of left-truncation; a vector or a number of 0 indicates the absence of left-truncation
+#' @param ci logical value: if TRUE, 95% boostrap confidence interval is returned
+#' @param niter a number specifying the number of iteration in the boostrap percentile method
+#' @return output as a data frame  
+
+MY.MCC(id, time, status, Tstart, ci=TRUE, niter=1000)
+
+```
+
+## Example 1
+
+We will create sample data as described in Dong et al. (2015) and demonstrate the usage of the function to achieve the MCC results.
+
+In the illustrative example, five participants were enrolled at the beginning. Subject 1 was alive at the end of the study and was considered censored at t8. Subject 2 was lost to follow-up at t1 and treated as censored. Subject 3 died from a competing-risk event at t5. Subject 4 experienced the event of interest three times (at t2, t6, and t7). Subject 5 experienced the event of interest once at t3 and died at t4.
+
+```{r}
+
+example.data <- data.frame(id=c(1,2,3,4,4,4,5,5),
+                           time=c(8,1,5,2,6,7,3,4),
+                           status=c(0,0,2,1,1,1,1,2))
+
+example.data
+
+```
+
+We can specify the subject `id`, survival `time`, and `status` (0 = censored, 1 = event, 2 = competing risk) in the function. Because there is no left-truncation issue, `Tstart` is assigned a value of 0. Additionally, setting `ci = FALSE` prevents the calculation of the confidence interval for MCC.
+
+```{r}
+
+mcc.result <- MY.MCC(id=example.data$id,time=example.data$time,
+                  status=example.data$status,Tstart=0,ci=FALSE)
+```
+
+The returned output is a data frame with columns: MCC and time. These results match the MCC results presented in the paper.
+
+```{r}
+
+mcc.result
+
+```
+
+## Example 2
+
+In this example, we will demonstrate how to present MCC results in a plot for a manuscript. The data example is a subset data comes from a Childhood Cancer Survivor Study (CCSS) project. 
+
+This data set contains 500 Survivors and 500 Siblings, including their survival age (e.g., T_AGE) and STATUS (0 = censored, 1 = event, 2 = competing risk). Specifically, the survivors' data are left-truncated, as those who died before study entry are not included in the analysis. There is no left-truncation issue for siblings.
+
+```{r}
+
+example.data2 <- read.csv('dataset.csv')
+str(example.data2)
+
+```
+
+We can estimate MCC with a 95% confidence interval for survivors and siblings, respectively.
+
+```{r}
+
+##Filter data for survivors and siblings
+my.surv <- example.data2 %>% filter(GROUP=='Survivors')
+my.sib <- example.data2 %>% filter(GROUP=='Siblings')
+
+##Calculate MCC for survivors
+cat('Calculate MCC for survivors: \n')
+start.time <- Sys.time()
+my.mcc.surv <- MY.MCC(id=my.surv$ID,
+                      time=my.surv$T_AGE,
+                      status=my.surv$STATUS,
+                      Tstart=my.surv$A_ENTRY,
+                      ci=TRUE, niter=1000)
+end.time <- Sys.time()
+
+print(round(end.time - start.time, 2))
+
+##Calculate MCC for survivors
+cat('Calculate MCC for siblings: \n')
+start.time <- Sys.time()
+my.mcc.sib <- MY.MCC(id=my.sib$ID,
+                      time=my.sib$T_AGE,
+                      status=my.sib$STATUS,
+                      Tstart=my.sib$A_ENTRY,
+                      ci=TRUE, niter=1000)
+end.time <- Sys.time()
+print(round(end.time - start.time, 2))
+
+```
+
+Combine to obtain the final MCC output.
+
+```{r}
+
+##Add group labels to MCC results
+my.mcc.surv2 <- my.mcc.surv %>% mutate(Group='Survivors')
+my.mcc.sib2 <- my.mcc.sib %>% mutate(Group='Siblings')
+
+##Final MCC Output
+my.mcc.output <- rbind(my.mcc.surv2,my.mcc.sib2)
+
+head(my.mcc.output)
+
+```
+
+In the following step, we aim to demonstrate how to plot MCC by adding a number at risk table. First, we define a function to calculate the number at risk, noting that individuals who encounter the event of interest are still at risk for another occurrence of the event.
+
+```{r}
+
+#' at.risk
+#'
+#' Table of At Risk/Censored (Events)
+#'
+#' @param id variable name that identifies subjects
+#' @param time variable name that reflects survival time
+#' @param status variable name that indicates status: 0=censored, 1=event, 2=competing risk
+#' @param grp variable name that specifies groups
+#' @param time.len a number that addresses time length
+#' @return output as a data frame
+
+at.risk <- function(id,time,status,grp,time.len){
+
+  indata <- data.frame(id=id,
+                       time=time,
+                       status=status,
+                       grp=grp)
+
+  #select the last record for each id
+  indata2 <- indata %>% arrange(grp,id,-time) %>% group_by(grp,id) %>% slice(1) %>% ungroup()
+  end.time <- max(indata$time,na.rm=T)
+
+  #select out censoring and competing risk
+  indata3 <- indata2 %>% filter(time!=end.time & status!=1) %>% mutate(temp=1)
+
+  #calculate risk sets by time cutoff
+  risksets <- with(na.omit(indata3[, Hmisc::Cs(time,temp,grp)]),
+                   table(grp,cut(time, seq(0, end.time, by = time.len),right=F)))
+
+  #calculate number of individuals initially at risk
+  init.num <- indata2 %>% group_by(grp) %>% tally()
+
+  #calculate number at risk at each time cutoff
+  n.at.risk <- sapply(1:nrow(risksets),
+                      function(i) Reduce('-',risksets[i,],
+                                         init=init.num$n[i],
+                                         accumulate=T))
+
+  colnames(n.at.risk) <- init.num$grp
+
+  #calculate censor at each time cutoff
+  censor.dt <- indata2 %>% filter(time!=end.time & status==0) %>% mutate(temp=1)
+  censorsets <- with(na.omit(censor.dt[, Hmisc::Cs(time,temp,grp)]),
+                     table(grp,cut(time, seq(0, end.time, by = time.len))))
+  n.censor <- sapply(1:nrow(censorsets),
+                     function(i) Reduce('+',censorsets[i,],
+                                        init=0,
+                                        accumulate=T))
+
+  colnames(n.censor) <- init.num$grp
+
+  #calculate event at each time cutoff
+  event.dt <- indata %>% filter(status==1) %>% mutate(temp=1)
+  eventsets <- with(na.omit(event.dt[, Hmisc::Cs(time,temp,grp)]),
+                    table(grp,cut(time, seq(0, end.time, by = time.len))))
+  n.event <- sapply(1:nrow(eventsets),
+                    function(i) Reduce('+',eventsets[i,],
+                                       init=0,
+                                       accumulate=T))
+  colnames(n.event) <- init.num$grp
+
+  #output a data frame
+  name.grp <- as.character(unique(init.num$grp))
+
+  output.list <- list()
+
+  for (i in name.grp){
+
+    ith.grp <- data.frame(n.at.risk=n.at.risk[,i],
+                          n.censor=n.censor[,i],
+                          n.event=n.event[,i]) %>%
+      reframe(i=paste0(n.at.risk,'/',n.censor,'(',n.event,')'))
+    names(ith.grp) <- i
+
+    output.list[[i]] <- ith.grp
+
+  }
+
+  output.dt <- do.call(cbind,output.list) %>% mutate(time=seq(0, end.time, by = time.len))
+
+  return(output.dt)
+}
+
+```
+
+We can assign variables from the input data and specify a time length, such as 10 years. This result will be used in the subsequent plot function. 
+
+```{r}
+
+risk.df <- at.risk(id=example.data2$ID,
+                time=example.data2$T_AGE,
+                status=example.data2$STATUS,
+                grp=example.data2$GROUP,
+                time.len=10)
+
+risk.df
+
+```
+
+To plot efficiently, we define a plot function. Users can input the mcc output generated from the `MY.MCC` function and the result from the `at.risk` function, specifying the labels for the x-axis, y-axis, and the title for the plot.
+
+```{r}
+
+#' mcc.plot
+#'
+#' MCC plot with at risk table
+#'
+#' @param mcc.out mcc output from MY.MCC function
+#' @param risk.df risk output from at.risk function
+#' @param xlab label for x-axis
+#' @param ylab label for y-axis
+#' @param title plot title
+#' @return plot object
+
+mcc.plot <- function(mcc.out,risk.df,xlab,ylab,title,...){
+
+  plot(c(min(mcc.out$time),max(mcc.out$time)),
+       c(min(mcc.out$lci),
+         max(mcc.out$uci)),
+       xlab="", ylab="",type = "n")
+
+  title(xlab = xlab, cex.lab=0.8, font.lab=2, line=2.5)
+  title(ylab = ylab, cex.lab=0.6, font.lab=2, line=2.5)
+  title(title,cex.lab=0.8)
+
+  groups <- unique(mcc.out$Group)
+  mcc.grp1 <- mcc.out %>% filter(Group==groups[1])
+  mcc.grp2 <- mcc.out %>% filter(Group==groups[2])
+
+  lines(mcc.grp1$time, mcc.grp1$MCC, type="s",lwd=3,col='#F8766D',lty=1) #type='s' means Stairs
+  lines(mcc.grp2$time, mcc.grp2$MCC, type="s",lwd=3,col="#00BFC4",lty=1) #type='s' means Stairs
+
+  #To obtain confidence interval in the style of stair, we need to cut time into small intervals
+
+  dummy <- data.frame(time=seq(min(mcc.grp1$time),max(mcc.grp1$time),by=0.01))
+  mcc.grp1.2 <- mcc.grp1 %>% full_join(dummy,by='time') %>% arrange(time) %>%
+    mutate_at(.vars=-c(1),zoo::na.locf)
+
+  polygon(c(mcc.grp1.2$time, rev(mcc.grp1.2$time)), c(mcc.grp1.2$uci, rev(mcc.grp1.2$lci)),
+          col = scales::alpha('#F8766D', 0.5), border = NA)
+
+  dummy <- data.frame(time=seq(min(mcc.grp2$time),max(mcc.grp2$time),by=0.01))
+  mcc.grp2.2 <- mcc.grp2 %>% full_join(dummy,by='time') %>% arrange(time) %>%
+    mutate_at(.vars=-c(1),zoo::na.locf)
+
+  polygon(c(mcc.grp2.2$time, rev(mcc.grp2.2$time)), c(mcc.grp2.2$uci, rev(mcc.grp2.2$lci)),
+          col = scales::alpha("#00BFC4", 0.5), border = NA)
+
+  legend("topleft", c(groups[1], groups[2]), col=c('#F8766D',"#00BFC4"),
+         inset=0.05, lty=1:1,lwd=2, cex=0.8, bty="n")
+
+  mtext(side=1, text="At Risk/Censored (Event)", adj=0, line=2.0, cex=0.8, font=2)
+
+  axis(side=1,at=risk.df$time,label=risk.df[,groups[1]],las=1,tick=FALSE,line=2.2,lwd=2.5,cex.axis=0.6,font=2)
+  mtext(side=1, text=groups[1],adj=-0.1, line=3.17,cex=0.6,font=2)
+
+  axis(side=1,at=risk.df$time,label=risk.df[,groups[2]],las=1,tick=FALSE,line=3,lwd=2.5,cex.axis=0.6,font=2)
+  mtext(side=1, text=groups[2],adj=-0.1,line=4,cex=0.6,font=2)
+
+}
+
+```
+
+The plot generated by the `mcc.plot` function illustrates the comparison of MCC between survivors and siblings over time, accounting for left-truncation and competing risks. 
+
+```{r}
+
+mcc.plot(mcc.out=my.mcc.output, risk.df=risk.df, 
+         xlab='Age (years)', ylab='Mean No. of Events per Person', title='MCC Curves')
+
+```
+
+# Conclusion
+
+In this document, we have demonstrated how to use the `MY.MCC` function to achieve MCC within a specific time period and how to visualize the results using additional functions. By following the steps outlined, users can effectively analyze and present MCC results, including confidence intervals and at-risk tables. This approach provides a proper method for handling left-truncated data with competing risks in a survival analysis context and fills the gap by offering a solution for estimating MCC and plotting it with at-risk table, which is not available in any existing R functions. 
+
+# References
+
+Geskus RB. Cause-specific cumulative incidence estimation and the fine and gray model under both left truncation and right censoring. Biometrics. 2011 Mar;67(1):39-49. doi: 10.1111/j.1541-0420.2010.01420.x. PMID: 20377575. 
+
+Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. Am J Epidemiol. 2015 Apr 1;181(7):532-40. d. Epub 2015 Feb 17. PMID: 25693770; PMCID: PMC4371763. doi: 10.1093/aje/kwu289
+
+
+
+
+  
