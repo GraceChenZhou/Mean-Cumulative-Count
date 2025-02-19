@@ -11,9 +11,9 @@
 
 <meta name="author" content="Grace Zhou" />
 
-<meta name="date" content="2025-02-17" />
+<meta name="date" content="2025-02-19" />
 
-<title>Vignette of Mean Cumulative Count (MCC)</title>
+<title>Tutorial of Mean Cumulative Count (MCC)</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1497,10 +1497,10 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Vignette of Mean Cumulative Count
+<h1 class="title toc-ignore">Tutorial of Mean Cumulative Count
 (MCC)</h1>
 <h4 class="author">Grace Zhou</h4>
-<h4 class="date">2025-02-17</h4>
+<h4 class="date">2025-02-19</h4>
 
 </div>
 
@@ -1512,6 +1512,54 @@ function to achieve MCC within a specific time period. Additionally, the
 functions <code>at.risk</code>, and <code>mcc.plot</code> are included
 to display MCC results in a plot with an at-risk table.</p>
 </div>
+<div id="r-version" class="section level1">
+<h1>R version</h1>
+<pre class="r"><code>R.Version()</code></pre>
+<pre><code>## $platform
+## [1] &quot;x86_64-w64-mingw32&quot;
+## 
+## $arch
+## [1] &quot;x86_64&quot;
+## 
+## $os
+## [1] &quot;mingw32&quot;
+## 
+## $crt
+## [1] &quot;ucrt&quot;
+## 
+## $system
+## [1] &quot;x86_64, mingw32&quot;
+## 
+## $status
+## [1] &quot;&quot;
+## 
+## $major
+## [1] &quot;4&quot;
+## 
+## $minor
+## [1] &quot;4.0&quot;
+## 
+## $year
+## [1] &quot;2024&quot;
+## 
+## $month
+## [1] &quot;04&quot;
+## 
+## $day
+## [1] &quot;24&quot;
+## 
+## $`svn rev`
+## [1] &quot;86474&quot;
+## 
+## $language
+## [1] &quot;R&quot;
+## 
+## $version.string
+## [1] &quot;R version 4.4.0 (2024-04-24 ucrt)&quot;
+## 
+## $nickname
+## [1] &quot;Puppy Cup&quot;</code></pre>
+</div>
 <div id="install-package" class="section level1">
 <h1>Install package</h1>
 <pre class="r"><code>install.packages(&#39;dplyr&#39;)  #Data management
@@ -1521,10 +1569,10 @@ install.packages(&#39;mstate&#39;) #CIF for left truncation and/or right censori
 <div id="load-function" class="section level1">
 <h1>Load function</h1>
 <p>First, load the necessary libraries and source the function.</p>
-<pre class="r"><code>library(dplyr)  
-library(cmprsk) 
-library(mstate) 
-source(&#39;MY_MCC.r&#39;)</code></pre>
+<pre class="r"><code>library(dplyr) #v1.1.4
+library(cmprsk) #2.2-12 
+library(mstate) #0.3.3
+source(&#39;MY_MCC.r&#39;) #https://github.com/GraceChenZhou/Mean-Cumulative-Count.git</code></pre>
 </div>
 <div id="using-function" class="section level1">
 <h1>Using function</h1>
@@ -1633,7 +1681,7 @@ my.mcc.surv &lt;- MY.MCC(id=my.surv$ID,
 <pre class="r"><code>end.time &lt;- Sys.time()
 
 print(round(end.time - start.time, 2))</code></pre>
-<pre><code>## Time difference of 1.5 mins</code></pre>
+<pre><code>## Time difference of 2.58 mins</code></pre>
 <pre class="r"><code>##Calculate MCC for survivors
 cat(&#39;Calculate MCC for siblings: \n&#39;)</code></pre>
 <pre><code>## Calculate MCC for siblings:</code></pre>
@@ -1655,7 +1703,7 @@ my.mcc.sib &lt;- MY.MCC(id=my.sib$ID,
 ## iteration: 1000</code></pre>
 <pre class="r"><code>end.time &lt;- Sys.time()
 print(round(end.time - start.time, 2))</code></pre>
-<pre><code>## Time difference of 30.99 secs</code></pre>
+<pre><code>## Time difference of 58.23 secs</code></pre>
 <p>Combine to obtain the final MCC output.</p>
 <pre class="r"><code>##Add group labels to MCC results
 my.mcc.surv2 &lt;- my.mcc.surv %&gt;% mutate(Group=&#39;Survivors&#39;)
