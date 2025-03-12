@@ -145,7 +145,7 @@ start.time <- Sys.time()
 my.mcc.sib <- MY.MCC(id=my.sib$ID,
                       time=my.sib$T_AGE,
                       status=my.sib$STATUS,
-                      Tstart=my.sib$A_ENTRY,
+                      Tstart=0,
                       ci=TRUE, niter=1000)
 end.time <- Sys.time()
 print(round(end.time - start.time, 2))
