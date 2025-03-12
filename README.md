@@ -11,7 +11,7 @@ where $CumI_p(t)$ represents the cumulative incidence for the pth $(p=1,2,\dots,
 * Estimation: The **MY.MCC** function from MY_MCC.r utilizes the weighted approach introduced by Geskus (2011) to handle left-truncation."
 * Visulaiztion: The at.risk function generates an at-risk table, and the mcc.plot function visulize MCC curves stratified by groups. 
 
-**For more details, please refer to the vignette_mcc.html**
+**For more details, please refer to the [vignette_mcc.html](https://gracechenzhou.github.io/Mean-Cumulative-Count/)**
 
 # Slides
 
