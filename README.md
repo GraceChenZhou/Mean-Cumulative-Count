@@ -1,5 +1,5 @@
 # Mean Cumulative Count (MCC)
-MCC is used to reflect mean number of events per person by a given time. For more details, please refer to Dong et al. (2015).   
+MCC is used to reflect mean number of events per person by a given time. For more details, please refer to Dong et al. (2015). 
 
 # Relationship between MCC and cumulative incidence(CumI)
 
@@ -12,6 +12,10 @@ where $CumI_p(t)$ represents the cumulative incidence for the pth $(p=1,2,\dots,
 * Visulaiztion: The at.risk function generates an at-risk table, and the mcc.plot function visulize MCC curves stratified by groups. 
 
 **For more details, please refer to the vignette_mcc.html**
+
+# Slides
+
+**MCC_LEFT_TRUNCATION.pdf**
 
 # Reference
 
