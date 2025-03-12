@@ -11,7 +11,7 @@
 
 <meta name="author" content="Grace Zhou" />
 
-<meta name="date" content="2025-02-19" />
+<meta name="date" content="2025-03-12" />
 
 <title>Tutorial of Mean Cumulative Count (MCC)</title>
 
@@ -1500,7 +1500,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Tutorial of Mean Cumulative Count
 (MCC)</h1>
 <h4 class="author">Grace Zhou</h4>
-<h4 class="date">2025-02-19</h4>
+<h4 class="date">2025-03-12</h4>
 
 </div>
 
@@ -1681,7 +1681,7 @@ my.mcc.surv &lt;- MY.MCC(id=my.surv$ID,
 <pre class="r"><code>end.time &lt;- Sys.time()
 
 print(round(end.time - start.time, 2))</code></pre>
-<pre><code>## Time difference of 2.58 mins</code></pre>
+<pre><code>## Time difference of 1.49 mins</code></pre>
 <pre class="r"><code>##Calculate MCC for survivors
 cat(&#39;Calculate MCC for siblings: \n&#39;)</code></pre>
 <pre><code>## Calculate MCC for siblings:</code></pre>
@@ -1689,7 +1689,7 @@ cat(&#39;Calculate MCC for siblings: \n&#39;)</code></pre>
 my.mcc.sib &lt;- MY.MCC(id=my.sib$ID,
                       time=my.sib$T_AGE,
                       status=my.sib$STATUS,
-                      Tstart=my.sib$A_ENTRY,
+                      Tstart=0,
                       ci=TRUE, niter=1000)</code></pre>
 <pre><code>## iteration: 100
 ## iteration: 200
@@ -1703,7 +1703,7 @@ my.mcc.sib &lt;- MY.MCC(id=my.sib$ID,
 ## iteration: 1000</code></pre>
 <pre class="r"><code>end.time &lt;- Sys.time()
 print(round(end.time - start.time, 2))</code></pre>
-<pre><code>## Time difference of 58.23 secs</code></pre>
+<pre><code>## Time difference of 30.51 secs</code></pre>
 <p>Combine to obtain the final MCC output.</p>
 <pre class="r"><code>##Add group labels to MCC results
 my.mcc.surv2 &lt;- my.mcc.surv %&gt;% mutate(Group=&#39;Survivors&#39;)
